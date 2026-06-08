@@ -4,14 +4,27 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Star, MapPin, Phone, ArrowLeft, Clock, Calendar, Check } from "lucide-react";
-import { salons, mockReviews, Review } from "@/data/salons";
+import { salons, mockReviews, Review, Salon } from "@/data/salons";
+
+// Required for static export — pre-render all known salon IDs
+export function generateStaticParams() {
+  return salons.map((s) => ({ id: s.id }));
+}
 
 export default function SalonDetailPage() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
 
-  // Find the salon by ID
-  const salon = salons.find((s) => s.id === id);
+  // Find salon — check both built-in and custom salons from localStorage
+  const [salon, setSalon] = useState<Salon | undefined>(salons.find((s) => s.id === id));
+
+  useEffect(() => {
+    if (!id) return;
+    // Check if it's a custom salon saved by a shop owner
+    const customSalons: Salon[] = JSON.parse(localStorage.getItem("custom_salons") || "[]");
+    const found = [...salons, ...customSalons].find((s) => s.id === id);
+    setSalon(found);
+  }, [id]);
 
   // State Management
   const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");

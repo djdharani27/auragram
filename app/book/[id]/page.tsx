@@ -4,15 +4,27 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft, Clock, Calendar, ShieldCheck, CheckCircle2, User, Phone, ClipboardList, MapPin } from "lucide-react";
-import { salons, SalonService } from "@/data/salons";
+import { salons, SalonService, Salon } from "@/data/salons";
+
+// Required for static export
+export function generateStaticParams() {
+  return salons.map((s) => ({ id: s.id }));
+}
 
 function BookingContent() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
   const searchParams = useSearchParams();
 
-  // Find Salon
-  const salon = salons.find((s) => s.id === id);
+  // Find Salon — merge custom salons from localStorage
+  const [salon, setSalon] = useState<Salon | undefined>(salons.find((s) => s.id === id));
+
+  useEffect(() => {
+    if (!id) return;
+    const customSalons: Salon[] = JSON.parse(localStorage.getItem("custom_salons") || "[]");
+    const found = [...salons, ...customSalons].find((s) => s.id === id);
+    setSalon(found);
+  }, [id]);
 
   // Read preselected slot from URL query param
   const querySlot = searchParams?.get("slot") || "";
